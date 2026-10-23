@@ -1,17 +1,16 @@
 # 🐳 Synology NAS Private Auto-Sharing Station
 
-![Docker](https://shields.io)
-![Nginx](https://shields.io)
-![Language](https://shields.io)
-![Encoding](https://shields.io)
+<!-- 【終極修正】移除易被阻擋的外部徽章，改用 GitHub 官方 100% 原生支援、絕不破圖的質感科技標籤牆 -->
+` 🐳 Docker Supported ` &nbsp; ` 🚀 Nginx Alpine ` &nbsp; ` 🛠️ HTML5 / CSS3 / JS ` &nbsp; ` 🔮 UTF-8 / Big5 雙解碼 `
 
+---
+
+## 📝 專案簡介
 這是一個專為 **群暉 Synology NAS** 量身打造的 **極簡、高質感私人雲端檔案全自動分享站**。本項目基於輕量級 Nginx 容器建構，具備全自動感知同步、智慧防亂碼雙編碼解讀核心，並完美兼顧「滑鼠左鍵原地智慧預覽、滑鼠右鍵原生新分頁開啟」的骨灰級操作直覺。
 
 ---
 
 ### 🖥️ 實際運行成果截圖
-
-<!-- 【終極修正】移除不相容的 HTML img 標籤，改用 GitHub 100% 能完美解析的原生相對路徑 Markdown 圖片語法 -->
 ![分享站介面截圖](screenshot.png)
 
 ---
@@ -35,7 +34,7 @@
 | 層級與實體路徑 | 檔案 / 資料夾名稱 | 檔案類型 / 權限 | 系統中所扮演的核心職責與機制 |
 | :--- | :--- | :--- | :--- |
 | 根目錄 `/my-web-server/` | **`docker-compose.yml`** | YAML 設定檔 | **環境守護神**：負責在 Container Manager 中一鍵拉取輕量 Nginx 容器，對照外部 `8081` 連接埠並掛載目錄。 |
-| 根目錄 `/my-web-server/` | **`default.conf`** | Nginx 設定檔 | **後端通道指揮官**：掌控底層精確路由。以雙層 `map` 分流下載與檢視，完美防禦 Nginx 經典的路徑疊加與 `if` 鎖死地雷。 |
+| 根目錄 `/my-web-server/` | **`default.conf`** | Nginx 設定檔 | **後端通道指揮官**：掌控底層精確路由。以雙層 `map` 分流下載與檢視，完美防禦 Nginx 經典的路記疊加與 `if` 鎖死地雷。 |
 | 子目錄 `/my-web-server/html/` | **`index.html`** | HTML5 / JS 原始碼 | **前端超級大腦**：採用 **DOM 節點記憶體動態建立法**，免除任何引號字元衝突地雷，掌管智慧解碼與前台視覺。 |
 | 子目錄 `/my-web-server/html/` | **`files/`** | 空白資料夾 (可讀寫) | **您的私人小金庫**：專門存放您要分享的所有檔案（支援中文）。新增、刪除檔案免動程式碼，前台自動感應同步。 |
 
@@ -50,7 +49,7 @@
 在 `/docker/my-web-server/` 根目錄下建立 `default.conf`，並貼入 Nginx 雙分流規則代碼。
 
 ### 3. 配置前端網頁主程式 (`index.html`)
-在 `/docker/my-web-server/html/` 目錄下建立 `index.html`，並貼入 DOM 動態節點建立法與智慧雙編碼解碼器代碼。
+在 `/docker/my-web-server/html/` 目率下建立 `index.html`，並貼入 DOM 動態節點建立法與智慧雙編碼解碼器代碼。
 
 ### 4. 透過群暉 Container Manager 啟動專案
 建立 `/docker/my-web-server/docker-compose.yml` 檔案並貼入以下環境配置代碼：
