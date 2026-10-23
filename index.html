@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAS 私人自動檔案分享站</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f8fafc; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; width: 100%; max-width: 650px; padding: 40px 30px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+        .header { text-align: center; margin-bottom: 35px; }
+        .header h1 { font-size: 1.8rem; font-weight: 700; background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+        .header p { color: #94a3b8; font-size: 0.95rem; }
+        .file-list { display: flex; flex-direction: column; gap: 15px; }
+        .file-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 16px 20px; transition: all 0.25s ease; }
+        .file-item:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(56, 189, 248, 0.4); transform: translateY(-2px); }
+        .file-info { display: flex; align-items: center; gap: 15px; flex: 1; min-width: 0; }
+        .file-icon-container { width: 32px; height: 32px; background: rgba(255, 255, 255, 0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .file-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 10px currentcolor; }
+        .file-details { min-width: 0; }
+        .file-name { font-weight: 500; font-size: 1rem; color: #f1f5f9; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-meta { font-size: 0.8rem; color: #64748b; }
+        .btn-group { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .action-btn { text-decoration: none; padding: 10px 18px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; transition: all 0.2s ease; white-space: nowrap; cursor: pointer; border: none; }
+        .download-btn { background: linear-gradient(135deg, #0284c7 0%, #3b82f6 100%); color: #ffffff; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); }
+        .download-btn:hover { opacity: 0.95; transform: scale(1.03); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); }
+        .preview-btn { background: rgba(255, 255, 255, 0.05); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.15); display: inline-flex; align-items: center; justify-content: center; }
+        .preview-btn:hover { background: rgba(255, 255, 255, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.5); transform: scale(1.03); }
+        .no-files { text-align: center; color: #64748b; padding: 20px; font-style: italic; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-box { background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; width: 90%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); transform: translateY(20px); transition: transform 0.3s ease; }
+        .modal-overlay.active .modal-box { transform: translateY(0); }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { font-weight: 600; font-size: 1.1rem; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; }
+        .modal-close { background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; transition: color 0.2s; }
+        .modal-close:hover { color: #f1f5f9; }
+        .modal-content { padding: 24px; overflow-y: auto; color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; word-break: break-all; background: #0f172a; margin: 0 24px 24px 24px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.03); }
+        .footer { text-align: center; margin-top: 35px; font-size: 0.8rem; color: #475569; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>NAS 自動同步分享站</h1>
+            <p>檔案自動同步中！左鍵點擊智慧檢視，右鍵點擊新分頁開啟</p>
+        </div>
+        <div class="file-list" id="fileList"><div class="no-files">正在讀取檔案清單...</div></div>
+        <div class="footer">Powered by Synology NAS Docker & Nginx</div>
+    </div>
+    <div class="modal-overlay" id="textModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">文件閱讀器</div>
+                <button class="modal-close" onclick="closeReader()">&times;</button>
+            </div>
+            <pre class="modal-content" id="modalContent">載入中...</pre>
+        </div>
+    </div>
+    <script>
+        // 智慧型雙解碼文字核心
+        async function openTextReader(fileUrl, fileName) {
+            const modal = document.getElementById('textModal');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('modalContent');
+            title.textContent = fileName;
+            content.textContent = "正在進行智慧解碼並載入內容...";
+            modal.classList.add('active');
+            try {
+                const response = await fetch(fileUrl);
+                if (!response.ok) throw new Error('無法讀取該檔案文件');
+                const buffer = await response.arrayBuffer();
+                let encoding = 'utf-8';
+                const arr = new Uint8Array(buffer.slice(0, 1000));
+                let isUtf8 = true, i = 0;
+                while (i < arr.length) {
+                    if (arr[i] <= 0x7F) { i += 1; }
+                    else if ((arr[i] & 0xE0) === 0xC0 && arr[i] >= 0xC2) { if (i + 1 >= arr.length || (arr[i+1] & 0xC0) !== 0x80) { isUtf8 = false; break; } i += 2; }
+                    else if ((arr[i] & 0xF0) === 0xE0) { if (i + 2 >= arr.length || (arr[i+1] & 0xC0) !== 0x80 || (arr[i+2] & 0xC0) !== 0x80) { isUtf8 = false; break; } i += 3; }
+                    else { isUtf8 = false; break; }
+                }
+                if (!isUtf8) encoding = 'big5';
+                content.textContent = new TextDecoder(encoding).decode(buffer);
+            } catch (error) { content.textContent = "【讀取失敗】" + error.message; }
+        }
+        
+        function closeReader() { document.getElementById('textModal').classList.remove('active'); }
+
+        async function loadFiles() {
+            // 【全新功能】檢查網址是否有帶有右鍵新分頁參數，如果有，直接為他喚醒全自動防亂碼解碼器
+            const urlParams = new URLSearchParams(window.location.search);
+            const autoFile = urlParams.get('readText');
+            if (autoFile) {
+                const decodedName = decodeURIComponent(autoFile);
+                openTextReader('./files/' + autoFile, decodedName);
+            }
+
+            const fileListContainer = document.getElementById('fileList');
+            try {
+                const response = await fetch('./files/');
+                if (!response.ok) throw new Error('無法讀取目錄');
+                const htmlDoc = new DOMParser().parseFromString(await response.text(), 'text/html');
+                const links = htmlDoc.getElementsByTagName('a'), files = [];
+                for (let i = 0; i < links.length; i++) {
+                    const href = links[i].getAttribute('href');
+                    if (href && href !== '../' && !href.startsWith('?') && !href.startsWith('.')) files.push(href);
+                }
+                if (files.length === 0) { fileListContainer.innerHTML = '<div class="no-files">目前 files 資料夾內沒有任何檔案</div>'; return; }
+                fileListContainer.innerHTML = '';
+                
+                files.forEach(fileName => {
+                    const decodedName = decodeURIComponent(fileName).replace(/\/$/g, ''); 
+                    const ext = decodedName.split('.').pop().toLowerCase();
+                    let dotColor = '#94a3b8', typeLabel = ext.toUpperCase() + ' 檔案', previewMode = null;
+                    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) { dotColor = '#10b981'; typeLabel = '圖片'; previewMode = 'link'; }
+                    else if (['mp4', 'mkv', 'avi', 'mov'].includes(ext)) { dotColor = '#8b5cf6'; typeLabel = '影片'; previewMode = 'link'; }
+                    else if (['mp3', 'flac', 'wav', 'aac'].includes(ext)) { dotColor = '#ec4899'; typeLabel = '音訊'; previewMode = 'link'; }
+                    else if (['pdf'].includes(ext)) { dotColor = '#ef4444'; typeLabel = 'PDF 文件'; previewMode = 'link'; }
+                    else if (['txt', 'md', 'conf', 'json', 'log', 'ini'].includes(ext)) { dotColor = '#3b82f6'; typeLabel = '文字文件'; previewMode = 'text'; }
+                    else if (['xlsx', 'xls', 'csv'].includes(ext)) { dotColor = '#22c55e'; typeLabel = '試算表表格'; }
+                    else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) { dotColor = '#f59e0b'; typeLabel = '壓縮封存檔'; }
+                    
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+
+                    const fileInfo = document.createElement('div');
+fileInfo.className = 'file-info';
+const iconContainer = document.createElement('div');
+iconContainer.className = 'file-icon-container';
+const fileDot = document.createElement('div');
+fileDot.className = 'file-dot';
+fileDot.style.color = dotColor;
+fileDot.style.backgroundColor = dotColor;
+iconContainer.appendChild(fileDot);
+const fileDetails = document.createElement('div');
+fileDetails.className = 'file-details';
+const nameDiv = document.createElement('div');
+nameDiv.className = 'file-name';
+nameDiv.textContent = decodedName;
+nameDiv.title = decodedName;
+const metaDiv = document.createElement('div');
+metaDiv.className = 'file-meta';
+metaDiv.textContent = '檔案格式: ' + typeLabel;
+fileDetails.appendChild(nameDiv);
+fileDetails.appendChild(metaDiv);
+fileInfo.appendChild(iconContainer);
+fileInfo.appendChild(fileDetails);
+const btnGroup = document.createElement('div');
+btnGroup.className = 'btn-group';
+if (previewMode) {
+const previewBtn = document.createElement('a');
+previewBtn.className = 'action-btn preview-btn';
+previewBtn.textContent = '檢視';
+previewBtn.target = '_blank';
+if (previewMode === 'link') {
+previewBtn.href = './files/' + fileName + '?view=true';
+} else if (previewMode === 'text') {
+// 【終極神修正】讓右鍵網域導向自己，這樣新分頁也能一秒觸發智慧型解碼器，完美通殺 Big5 亂碼！
+previewBtn.href = './index.html?readText=' + fileName;
+previewBtn.onclick = function(event) {
+event.preventDefault();
+openTextReader('./files/' + fileName, decodedName);
+};
+}
+btnGroup.appendChild(previewBtn);
+}
+const downloadBtn = document.createElement('a');
+downloadBtn.className = 'action-btn download-btn';
+downloadBtn.textContent = '下載';
+downloadBtn.href = './files/' + fileName;
+downloadBtn.setAttribute('download', '');
+btnGroup.appendChild(downloadBtn);
+fileItem.appendChild(fileInfo);
+fileItem.appendChild(btnGroup);
+fileListContainer.appendChild(fileItem);
+});
+} catch (error) { fileListContainer.innerHTML = '無法自動載入檔案清單。'; }
+}
+document.getElementById('textModal').addEventListener('click', function(e) { if(e.target === this) closeReader(); });
+window.addEventListener('DOMContentLoaded', loadFiles);
+    </script>
+</body>
+</html>
